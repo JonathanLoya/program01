@@ -27,6 +27,10 @@ import java.util.Date;
 import java.text.DateFormat;
 import java.util.TimeZone;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
 public class WebWorker implements Runnable
 {
 
@@ -116,9 +120,24 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
 **/
 private void writeContent(OutputStream os) throws Exception
 {
+  FileReader fileReader = new FileReader("test.html");
+   
+  String fileContents = "";
+
+  int i ;
+
+  while((i =  fileReader.read())!=-1){
+   char ch = (char)i;
+
+   fileContents = fileContents + ch; 
+  }
+
+  os.write(fileContents.getBytes());
+/*
    os.write("<html><head></head><body>\n".getBytes());
    os.write("<h3>My web server works!</h3>\n".getBytes());
    os.write("</body></html>\n".getBytes());
+*/
 }
 
 } // end class
