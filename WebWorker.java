@@ -143,28 +143,27 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
 private void writeContent(OutputStream os) throws Exception
 {
   FileReader fileReader = new FileReader(webPath);
-   
   String fileContents = "";
-
-  int i ;
-
-  while((i =  fileReader.read())!=-1){
+  int i;
+  while((i =  fileReader.read())!=-1)
+  {
    char ch = (char)i;
-
    fileContents = fileContents + ch; 
   }
-
+  //date variables
+  Date d = new Date();
+  DateFormat df = DateFormat.getDateTimeInstance();
+  df.setTimeZone(TimeZone.getTimeZone("MST"));
+  
+  fileContents = fileContents.replaceAll("<cs371date>", df.format(d));
+  fileContents = fileContents.replaceAll("<cs371server>", "Server: Jon's very own server");
+  
   os.write(fileContents.getBytes());
 /*
    os.write("<html><head></head><body>\n".getBytes());
    os.write("<h3>My web server works!</h3>\n".getBytes());
    os.write("</body></html>\n".getBytes());
 */
-}
-
-private void http404() throws Exception
-{
-   
 }
 
 } // end class
