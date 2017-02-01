@@ -85,7 +85,7 @@ private void readHTTPRequest(InputStream is)
 		 if( line.startsWith("GET") )
 		 {
 			 System.err.println("Found html request!");
-			 webPath = line.substring(line.indexOf(" ")+1,line.lastIndexOf(" "));
+			 webPath = line.substring(line.indexOf(" ")+2,line.lastIndexOf(" "));
 			 System.err.println(webPath);
 		 }
 		 
@@ -108,7 +108,14 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
    Date d = new Date();
    DateFormat df = DateFormat.getDateTimeInstance();
    df.setTimeZone(TimeZone.getTimeZone("GMT"));
-   os.write("HTTP/1.1 200 OK\n".getBytes());
+   File webFile = new File(webPath);
+   if( webFile.exists() && !webFile.isDirectory() )
+   {
+	   os.write("HTTP/1.1 200 OK\n".getBytes());
+   } else
+   {
+	   os.write("HTTP/1.1 404 Not Found\n".getBytes());
+   }
    os.write("Date: ".getBytes());
    os.write((df.format(d)).getBytes());
    os.write("\n".getBytes());
@@ -119,6 +126,12 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
    os.write("Content-Type: ".getBytes());
    os.write(contentType.getBytes());
    os.write("\n\n".getBytes()); // HTTP header ends with 2 newlines
+   if( !webFile.exists() || webFile.isDirectory() )
+   {
+	   os.write("<html><head></head><body>\n".getBytes());
+	   os.write("<h3>404 Not Found</h3>\n".getBytes());
+	   os.write("</body></html>\n".getBytes());
+   }
    return;
 }
 
@@ -129,7 +142,7 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
 **/
 private void writeContent(OutputStream os) throws Exception
 {
-  FileReader fileReader = new FileReader("sub/test2.html");
+  FileReader fileReader = new FileReader(webPath);
    
   String fileContents = "";
 
@@ -147,6 +160,11 @@ private void writeContent(OutputStream os) throws Exception
    os.write("<h3>My web server works!</h3>\n".getBytes());
    os.write("</body></html>\n".getBytes());
 */
+}
+
+private void http404() throws Exception
+{
+   
 }
 
 } // end class
