@@ -35,6 +35,7 @@ public class WebWorker implements Runnable
 {
 
 private Socket socket;
+private String webPath;
 
 /**
 * Constructor: must have a valid open socket
@@ -80,6 +81,14 @@ private void readHTTPRequest(InputStream is)
          while (!r.ready()) Thread.sleep(1);
          line = r.readLine();
          System.err.println("Request line: ("+line+")");
+		 
+		 if( line.startsWith("GET") )
+		 {
+			 System.err.println("Found html request!");
+			 webPath = line.substring(line.indexOf(" ")+1,line.lastIndexOf(" "));
+			 System.err.println(webPath);
+		 }
+		 
          if (line.length()==0) break;
       } catch (Exception e) {
          System.err.println("Request error: "+e);
@@ -120,7 +129,7 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
 **/
 private void writeContent(OutputStream os) throws Exception
 {
-  FileReader fileReader = new FileReader("test.html");
+  FileReader fileReader = new FileReader("sub/test2.html");
    
   String fileContents = "";
 
