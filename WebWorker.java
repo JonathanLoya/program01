@@ -27,9 +27,15 @@ import java.util.Date;
 import java.text.DateFormat;
 import java.util.TimeZone;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
+//import java.io.File;
+import java.awt.image.BufferedImage;
+//import java.io.ByteArrayInputStream;
+//import java.io.ByteArrayOutputStream;
+//import java.io.IOException;
+//import java.io.InputStream;
+import javax.imageio.ImageIO;
+import javax.xml.bind.DatatypeConverter;
+
 
 public class WebWorker implements Runnable
 {
@@ -57,9 +63,32 @@ public void run()
    try {
       InputStream  is = socket.getInputStream();
       OutputStream os = socket.getOutputStream();
-      readHTTPRequest(is);
-      writeHTTPHeader(os,"text/html");
-      writeContent(os);
+      readHTTPRequest(is); 
+      
+      File webFile = new File(webPath);     
+      //System.out.println("<debug> "+webPath);
+      String webPathExt = getFileExtension(webFile);
+      //System.out.println("<debug> "+webPathExt);
+      String headerType = "";
+      
+		if( webPathExt.equals("html") )
+			headerType = "text/html";
+      else if( webPathExt.equals("jpg") )
+      	headerType = "image/jpg";
+      else if( webPathExt.equals("png") )
+      	headerType = "image/png";
+      else if( webPathExt.equals("gif") )
+      	headerType = "image/gif";
+      else if( webPathExt.equals("ico") )
+      	headerType = "image/x-icon";
+     	
+     	//System.out.println("<debug> "+headerType);
+      writeHTTPHeader(os,headerType);
+      if( webPathExt.equals("html") )
+      	writeStringContent(os);
+      else if( headerType.startsWith("image") )
+      	writeImageContent(os,webPathExt);
+      
       os.flush();
       socket.close();
    } catch (Exception e) {
@@ -77,25 +106,26 @@ private void readHTTPRequest(InputStream is)
    String line;
    BufferedReader r = new BufferedReader(new InputStreamReader(is));
    while (true) {
-      try {
+		try {
          while (!r.ready()) Thread.sleep(1);
          line = r.readLine();
          System.err.println("Request line: ("+line+")");
-		 
-		 if( line.startsWith("GET") )
-		 {
-			 System.err.println("Found html request!");
-			 webPath = line.substring(line.indexOf(" ")+2,line.lastIndexOf(" "));
-			 System.err.println(webPath);
-		 }
-		 
-         if (line.length()==0) break;
-      } catch (Exception e) {
-         System.err.println("Request error: "+e);
-         break;
-      }
-   }
-   return;
+		   
+			if( line.startsWith("GET") )
+			{
+				System.out.println("<debug> "+line);
+				//System.err.println("<debug> Found get request!");
+				webPath = line.substring(line.indexOf(" ")+2,line.lastIndexOf(" "));
+				//System.err.println("<debug> "+webPath);
+			}
+			 
+		   if (line.length()==0) break;
+		} catch (Exception e) {
+	     System.err.println("Request error: "+e);
+	     break;
+		}
+	}
+	return;
 }
 
 /**
@@ -112,23 +142,31 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
    if( webFile.exists() && !webFile.isDirectory() )
    {
 	   os.write("HTTP/1.1 200 OK\n".getBytes());
+	   os.write("Date: ".getBytes());
+		os.write((df.format(d)).getBytes());
+		os.write("\n".getBytes());
+		os.write("Server: Jon's very own server\n".getBytes());
+		//os.write("Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n".getBytes());
+		//os.write("Content-Length: 438\n".getBytes()); 
+		os.write("Connection: close\n".getBytes());
+		os.write("Content-Type: ".getBytes());
+		os.write(contentType.getBytes());
+		os.write("\n\n".getBytes()); // HTTP header ends with 2 newlines
    } else
    {
 	   os.write("HTTP/1.1 404 Not Found\n".getBytes());
-   }
-   os.write("Date: ".getBytes());
-   os.write((df.format(d)).getBytes());
-   os.write("\n".getBytes());
-   os.write("Server: Jon's very own server\n".getBytes());
-   //os.write("Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n".getBytes());
-   //os.write("Content-Length: 438\n".getBytes()); 
-   os.write("Connection: close\n".getBytes());
-   os.write("Content-Type: ".getBytes());
-   os.write(contentType.getBytes());
-   os.write("\n\n".getBytes()); // HTTP header ends with 2 newlines
-   if( !webFile.exists() || webFile.isDirectory() )
-   {
-	   os.write("<html><head></head><body>\n".getBytes());
+	   os.write("Date: ".getBytes());
+		os.write((df.format(d)).getBytes());
+		os.write("\n".getBytes());
+		os.write("Server: Jon's very own server\n".getBytes());
+		//os.write("Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n".getBytes());
+		//os.write("Content-Length: 438\n".getBytes()); 
+		os.write("Connection: close\n".getBytes());
+		os.write("Content-Type: ".getBytes());
+		os.write(contentType.getBytes());
+		os.write("\n\n".getBytes()); // HTTP header ends with 2 newlines
+		
+		os.write("<html><head></head><body>\n".getBytes());
 	   os.write("<h3>404 Not Found</h3>\n".getBytes());
 	   os.write("</body></html>\n".getBytes());
    }
@@ -140,15 +178,15 @@ private void writeHTTPHeader(OutputStream os, String contentType) throws Excepti
 * be done after the HTTP header has been written out.
 * @param os is the OutputStream object to write to
 **/
-private void writeContent(OutputStream os) throws Exception
+private void writeStringContent(OutputStream os) throws Exception
 {
   FileReader fileReader = new FileReader(webPath);
   String fileContents = "";
   int i;
   while((i =  fileReader.read())!=-1)
   {
-   char ch = (char)i;
-   fileContents = fileContents + ch; 
+		char ch = (char)i;
+		fileContents = fileContents + ch; 
   }
   //date variables
   Date d = new Date();
@@ -164,6 +202,35 @@ private void writeContent(OutputStream os) throws Exception
    os.write("<h3>My web server works!</h3>\n".getBytes());
    os.write("</body></html>\n".getBytes());
 */
+}
+
+private void writeImageContent(OutputStream os, String imageExt) throws Exception
+{
+	//System.out.println("<debug> hecking image");
+	System.out.println("filePath: "+webPath);
+	byte[] imageInByte;
+	BufferedImage originalImage = ImageIO.read(new File(webPath));
+
+	// convert BufferedImage to byte array
+	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	String encodedImage = DatatypeConverter.printBase64Binary(baos.toByteArray());
+	//String encodedImage = Base64.encode(baos.toByteArray());
+	System.out.println("extension:"+imageExt);
+	ImageIO.write(originalImage, imageExt, baos);
+	baos.flush();
+	imageInByte = baos.toByteArray();
+
+	os.write(imageInByte);
+
+	baos.close();
+}
+
+private static String getFileExtension(File file)
+{
+	String fileName = file.getName();
+	if( fileName.lastIndexOf(".") != -1 && fileName.lastIndexOf(".") != 0 )
+		return fileName.substring( fileName.lastIndexOf(".")+1 );
+	else return "";
 }
 
 } // end class
