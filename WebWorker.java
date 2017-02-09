@@ -210,7 +210,7 @@ private void writeImageContent(OutputStream os, String imageExt) throws Exceptio
 	System.out.println("filePath: "+webPath);
 	byte[] imageInByte;
 	BufferedImage originalImage = ImageIO.read(new File(webPath));
-
+	
 	// convert BufferedImage to byte array
 	ByteArrayOutputStream baos = new ByteArrayOutputStream();
 	String encodedImage = DatatypeConverter.printBase64Binary(baos.toByteArray());
