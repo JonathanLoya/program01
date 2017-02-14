@@ -113,7 +113,7 @@ private void readHTTPRequest(InputStream is)
 		   
 			if( line.startsWith("GET") )
 			{
-				System.out.println("<debug> "+line);
+				//System.out.println("<debug> "+line);
 				//System.err.println("<debug> Found get request!");
 				webPath = line.substring(line.indexOf(" ")+2,line.lastIndexOf(" "));
 				//System.err.println("<debug> "+webPath);
@@ -206,6 +206,8 @@ private void writeStringContent(OutputStream os) throws Exception
 
 private void writeImageContent(OutputStream os, String imageExt) throws Exception
 {
+	/* image proccessor does not use FileOutputSteam
+	
 	//System.out.println("<debug> hecking image");
 	System.out.println("filePath: "+webPath);
 	byte[] imageInByte;
@@ -223,6 +225,19 @@ private void writeImageContent(OutputStream os, String imageExt) throws Exceptio
 	os.write(imageInByte);
 
 	baos.close();
+	*/
+	
+	//	System.out.println("<debug> attempting FileInputStream read: "+webPath); 
+	String fileName = webPath; 
+	BufferedInputStream in = new BufferedInputStream(new FileInputStream(fileName)); 
+
+	byte[] buff = new byte[32 * 1024]; 
+	int len = 0; 
+	while((len = in.read(buff)) > 0)
+	{ 
+		os.write(buff);
+	} 
+	in.close();
 }
 
 private static String getFileExtension(File file)
